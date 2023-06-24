@@ -1,0 +1,19 @@
+name: VivaPortal
+version: '${project.version}'
+main: online.vivaseikatsu.stra.vivaportal.VivaPortal
+api-version: 1.18
+
+commands:
+  vivaportal:
+    usage: /<Command> [set, remove]
+    description: ポータルをセットしたり、削除したりできます。
+    permission: vivaportal.setting
+
+permissions:
+  vivaportal.setting:
+    description: vivaPortalを設定するのに必要な権限です。
+    default: op
+
+  vivaportal.use:
+    description: vivaPortalを使用するのに必要な権限です。
+    default: true

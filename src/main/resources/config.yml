@@ -1,0 +1,15 @@
+res_world_name: "res"
+
+main2res:
+  world_name:
+  x:
+  y:
+  z:
+  direction:
+
+res2main:
+  world_name:
+  x:
+  y:
+  z:
+  direction:
