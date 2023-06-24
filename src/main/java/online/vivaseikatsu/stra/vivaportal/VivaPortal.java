@@ -8,6 +8,7 @@ import org.bukkit.entity.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class VivaPortal extends JavaPlugin {
 
@@ -233,7 +234,78 @@ public final class VivaPortal extends JavaPlugin {
 
 
         return true;
+    // onCommandここまで
     }
+
+
+
+    // コマンドのTab補完
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if(command.getName().equalsIgnoreCase("vivaportal")){
+
+            // Tab補完用のリストを作成
+            List<String> argList = new ArrayList<>();
+
+            // 引数1つ目の処理
+            if (args.length == 1) {
+
+                argList.add("select");
+                argList.add("set");
+                argList.add("regen");
+                argList.add("remove");
+                argList.add("help");
+
+                return argList.stream().filter(a -> a.startsWith(args[0])).collect(Collectors.toList());
+            // 1つ目ここまで
+            }
+
+            // 引数2つ目の処理
+            if (args.length == 2) {
+
+                if(args[0].equalsIgnoreCase("set")
+                        || args[0].equalsIgnoreCase("remove")){
+
+                    argList.add("main2res");
+                    argList.add("res2main");
+
+                }
+
+                return argList.stream().filter(a -> a.startsWith(args[1])).collect(Collectors.toList());
+            // 2つ目ここまで
+            }
+
+            // 引数3つ目の処理
+            if (args.length == 3) {
+
+                if(args[0].equalsIgnoreCase("set")){
+
+                    if(args[1].equalsIgnoreCase("main2res")
+                            || args[1].equalsIgnoreCase("res2main")){
+
+                        argList.add("n");
+                        argList.add("s");
+                        argList.add("e");
+                        argList.add("w");
+
+                    }
+
+                }
+
+                return argList.stream().filter(a -> a.startsWith(args[2])).collect(Collectors.toList());
+            // 3つ目ここまで
+            }
+
+
+        // vivaportal ここまで
+        }
+
+        return null;
+    // コマンドのTab補完ここまで
+    }
+
+
+
 
 // こまごましたやつ
 
@@ -281,6 +353,32 @@ public final class VivaPortal extends JavaPlugin {
         w.getBlockState(x,y+2,z).getBlock().setType(Material.END_GATEWAY);
         w.getBlockState(x,y+3,z).getBlock().setType(Material.END_GATEWAY);
         w.getBlockState(x,y+4,z).getBlock().setType(Material.BEDROCK);
+
+        // 周りに空間があるかの確認
+        if(!w.getBlockState(x+1,y+1,z).getType().isSolid()
+                && !w.getBlockState(x+1,y+2,z).getType().isSolid()) return;
+        if(!w.getBlockState(x-1,y+1,z).getType().isSolid()
+                && !w.getBlockState(x-1,y+2,z).getType().isSolid()) return;
+        if(!w.getBlockState(x,y+1,z+1).getType().isSolid()
+                && !w.getBlockState(x,y+2,z+1).getType().isSolid()) return;
+        if(!w.getBlockState(x,y+1,z-1).getType().isSolid()
+                && !w.getBlockState(x,y+2,z-1).getType().isSolid()) return;
+        if(!w.getBlockState(x+1,y+3,z).getType().isSolid()
+                && !w.getBlockState(x+1,y+2,z).getType().isSolid()) return;
+        if(!w.getBlockState(x-1,y+3,z).getType().isSolid()
+                && !w.getBlockState(x-1,y+2,z).getType().isSolid()) return;
+        if(!w.getBlockState(x,y+3,z+1).getType().isSolid()
+                && !w.getBlockState(x,y+2,z+1).getType().isSolid()) return;
+        if(!w.getBlockState(x,y+3,z-1).getType().isSolid()
+                && !w.getBlockState(x,y+2,z-1).getType().isSolid()) return;
+
+        // 周りに空間がない場合、AIRを生成
+        w.getBlockState(x,y+1,z + 1).getBlock().setType(Material.AIR);
+        w.getBlockState(x,y+2,z + 1).getBlock().setType(Material.AIR);
+        w.getBlockState(x,y+3,z + 1).getBlock().setType(Material.AIR);
+        w.getBlockState(x+1,y+1,z + 1).getBlock().setType(Material.AIR);
+        w.getBlockState(x+1,y+2,z + 1).getBlock().setType(Material.AIR);
+        w.getBlockState(x+1,y+3,z + 1).getBlock().setType(Material.AIR);
 
     }
 

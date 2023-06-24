@@ -1,15 +1,13 @@
 package online.vivaseikatsu.stra.vivaportal;
 
+import jdk.internal.jshell.tool.StopDetectingInputStream;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -19,6 +17,11 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerUnleashEntityEvent;
+import org.bukkit.event.vehicle.VehicleMoveEvent;
+import org.bukkit.plugin.Plugin;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PortalListener implements Listener {
 
@@ -104,6 +107,47 @@ public class PortalListener implements Listener {
 
 
     // onPlayerMoveEventここまで
+    }
+
+    // 乗り物が動くときの処理
+    @EventHandler
+    private void onVehicleMoveEvent(VehicleMoveEvent e){
+
+        // 乗り物を取得
+        Vehicle v = e.getVehicle();
+
+        // 乗り物に何も乗っていない場合は終了
+        if(v.getPassenger() == null) return;
+
+        // 同じブロック内での移動だった場合、終了
+        if(e.getFrom().getBlockX() == e.getTo().getBlockX()
+                && e.getFrom().getBlockY() == e.getTo().getBlockY()
+                && e.getFrom().getBlockZ() == e.getTo().getBlockZ()
+        ) return;
+
+
+
+        // ポータルの場所を取得
+        Location main2res = plg.Portal2Location("main2res");
+        Location res2main = plg.Portal2Location("res2main");
+
+        // 移動元のブロックがポータル内の場合は、終了
+        if(isPortalLocation(e.getFrom(),main2res)) return;
+        if(isPortalLocation(e.getFrom(),res2main)) return;
+
+        // ポータル"main2res"と移動先ブロックがかぶったとき (メイン -> 資源)
+        if(isPortalLocation(e.getTo(),main2res)){
+            VehiclePortalTP(v,"res2main");
+            return;
+        }
+
+        // ポータル"res2main"と移動先ブロックがかぶったとき (資源 -> メイン)
+        if(isPortalLocation(e.getTo(),res2main)){
+            VehiclePortalTP(v,"main2res");
+            return;
+        }
+
+
     }
 
 
@@ -212,8 +256,8 @@ public class PortalListener implements Listener {
                 check2.setY(check.getY() + 1);
 
                 // チェック先がタテに2マスAIRなら、隣接する場所の確認
-                if(check.getBlock().getType() == Material.AIR
-                        && check2.getBlock().getType() == Material.AIR){
+                if(!check.getBlock().getType().isSolid()
+                        && !check2.getBlock().getType().isSolid()){
 
                     // チェックするブロックを設定
                     check = center.clone();
@@ -222,8 +266,8 @@ public class PortalListener implements Listener {
                     check2 = check.clone();
                     check2.setY(check.getY() + 1);
 
-                    if(check.getBlock().getType() == Material.AIR
-                            && check2.getBlock().getType() == Material.AIR){
+                    if(!check.getBlock().getType().isSolid()
+                            && !check2.getBlock().getType().isSolid()){
                         exitBlock = check.clone();
                         break;
                     }
@@ -235,8 +279,8 @@ public class PortalListener implements Listener {
                     check2 = check.clone();
                     check2.setY(check.getY() + 1);
 
-                    if(check.getBlock().getType() == Material.AIR
-                            && check2.getBlock().getType() == Material.AIR){
+                    if(!check.getBlock().getType().isSolid()
+                            && !check2.getBlock().getType().isSolid()){
                         exitBlock = check.clone();
                         break;
                     }
@@ -249,9 +293,9 @@ public class PortalListener implements Listener {
 
     }
 
-
     // プレイヤーテレポートの処理
     public void PlayerPortalTP(Player player,String exitPortal){
+
 
         // 資源側のポータルがない場合、ポータルをスポーン地点に自動生成
         if(plg.config.getString("res2main.world_name") == null){
@@ -264,9 +308,16 @@ public class PortalListener implements Listener {
             return;
         }
 
-        // プレイヤーをテレポート
-        player.teleport(plg.Portal2Location(exitPortal));
+        // 乗り物に乗っているとき用の処理
+        if(player.getVehicle() != null){
+            VehiclePortalTP((Vehicle) player.getVehicle(),exitPortal);
+            // ポータルのハリボテを生成
+            plg.CreateGateway(plg.Portal2Location(exitPortal));
+            return;
+        }
 
+        // 通常のテレポート処理
+        player.teleport(plg.Portal2Location(exitPortal));
         // ポータルのハリボテを生成
         plg.CreateGateway(plg.Portal2Location(exitPortal));
 
@@ -278,13 +329,23 @@ public class PortalListener implements Listener {
         // 相手側ポータルが不正な場合、終了
         if(exitPortal.getWorld() == null) return;
 
+
+
         // TP先の設定
         Location exitBlock = exitPortal.clone();
 
         // ポータルに重なってるMobを探して、テレポートさせる
-        for(Entity mob : enterPortal.getChunk().getEntities() ){
+        for(Entity entity : enterPortal.getChunk().getEntities() ){
 
-            if(isPortalLocation(mob.getLocation(),enterPortal)){
+            if(entity.getType() == EntityType.PLAYER) continue;
+
+            if(isPortalLocation(entity.getLocation(),enterPortal)){
+
+                // entityがなにかに乗っている場合、乗り物の処理を優先
+                if(entity.getVehicle() != null) return;
+                // 何かを乗せている場合、乗り物処理を優先
+                if(entity.getPassenger() != null) return;
+
                 // ポータル周りのAirブロックの場所をTP先に選定
                 exitBlock = TPpointCheck(exitBlock);
                 if(isPortalLocation(exitBlock,exitPortal)){
@@ -292,17 +353,49 @@ public class PortalListener implements Listener {
                     exitBlock = TPpointCheck(exitBlock);
                 }
 
-                // TP先にmobをテレポート
-                mob.teleport(exitBlock);
-
+                // エンティティをテレポート
+                entity.teleport(exitBlock);
             }
 
+        }
+
+    }
+
+    // 乗り物テレポートの処理
+    public void VehiclePortalTP(Vehicle vehicle,String exitPortal){
+
+
+        // TP先ポータルを取得
+        Location exitBlock = plg.Portal2Location(exitPortal);
+
+        // ポータル周りのAirブロックの場所をTP先に選定
+        exitBlock = TPpointCheck(exitBlock);
+        if(isPortalLocation(exitBlock,plg.Portal2Location(exitPortal))){
+            exitBlock.setY(exitBlock.getY() +1);
+            exitBlock = TPpointCheck(exitBlock);
+        }
+
+        // 乗ってるエンティティのリストを生成
+        List<Entity> entityList = new ArrayList<Entity>(vehicle.getPassengers());
+
+        // 乗ってるエンティティをすべて下ろす
+        vehicle.eject();
+
+        // テレポート処理
+        vehicle.teleport(exitBlock);
+
+        for(Entity e : entityList){
+            e.teleport(exitBlock);
+            vehicle.addPassenger(e);
         }
 
 
     }
 
 
-
-
 }
+
+
+
+
+
