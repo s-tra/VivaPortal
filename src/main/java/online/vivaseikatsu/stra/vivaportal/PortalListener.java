@@ -170,6 +170,55 @@ public class PortalListener implements Listener {
         // スポーン地点の足元を指定
         spawn.setY(spawn.getY() -1);
 
+        // 足元ブロックが葉っぱかどうか判定
+        if(spawn.getBlock().getType().toString().contains("_LEAVES")){
+
+            plg.getLogger().info("足元:"+spawn.getBlock().getType());
+            plg.getLogger().info("足元が葉っぱブロックと判定");
+
+            Location l = spawn.clone();
+
+            // 下方向に30ブロック分走査
+            for(int i = 1; i <= 30; i++){
+                plg.getLogger().info("走査中"+i+"ブロック目");
+                // 座標を一つ下げる
+                l.setY(l.getY() - 1);
+
+                // 地面とみなせるブロックだった場合は、それを指定
+                if(l.getBlock().getType() == Material.GRASS_BLOCK
+                        |l.getBlock().getType() == Material.STONE
+                        |l.getBlock().getType() == Material.SAND
+                        |l.getBlock().getType() == Material.GRAVEL
+                        |l.getBlock().getType() == Material.PODZOL
+                        |l.getBlock().getType() == Material.DIRT
+                        |l.getBlock().getType() == Material.DIRT_PATH
+                        |l.getBlock().getType() == Material.COARSE_DIRT){
+                    spawn = l;
+                    plg.getLogger().info("走査完了:"+l.getBlock().getType()+",Y="+l.getBlockY());
+                    break;
+                }
+
+                // 捜査中に水面に当たった時はあきらめる
+                if(l.getBlock().getType() == Material.WATER
+                        |l.getBlock().getType() == Material.LAVA)break;
+
+
+
+
+            }
+
+
+
+
+        }
+
+
+
+
+
+
+
+
         // config.ymlに値をセット
         plg.config.set("res2main.world_name", spawn.getWorld().getName());
         plg.config.set("res2main.x", (int) spawn.getX());
@@ -204,6 +253,7 @@ public class PortalListener implements Listener {
         if(location.getBlockY() == portal.getBlockY()) return true;
         if(location.getBlockY() == portal.getBlockY() + 1) return true;
         if(location.getBlockY() == portal.getBlockY() + 2) return true;
+        if(location.getBlockY() == portal.getBlockY() + 3) return true;
 
         // 結局違えば、false
         return false;

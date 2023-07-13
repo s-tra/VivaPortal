@@ -352,7 +352,8 @@ public final class VivaPortal extends JavaPlugin {
         w.getBlockState(x,y+1,z).getBlock().setType(Material.END_GATEWAY);
         w.getBlockState(x,y+2,z).getBlock().setType(Material.END_GATEWAY);
         w.getBlockState(x,y+3,z).getBlock().setType(Material.END_GATEWAY);
-        w.getBlockState(x,y+4,z).getBlock().setType(Material.BEDROCK);
+        w.getBlockState(x,y+4,z).getBlock().setType(Material.END_GATEWAY);
+        w.getBlockState(x,y+5,z).getBlock().setType(Material.BEDROCK);
 
         // 周りに空間があるかの確認
         if(!w.getBlockState(x+1,y+1,z).getType().isSolid()
@@ -398,7 +399,7 @@ public final class VivaPortal extends JavaPlugin {
 
         // 構造が存在していない場合は、終了
         if(!(w.getBlockState(x,y,z).getBlock().getType() == Material.BEDROCK)) return;
-        if(!(w.getBlockState(x,y+4,z).getBlock().getType() == Material.BEDROCK)) return;
+        if(!(w.getBlockState(x,y+5,z).getBlock().getType() == Material.BEDROCK)) return;
 
 
         // 足元の岩盤にするブロックから上に向かって生成
@@ -407,6 +408,7 @@ public final class VivaPortal extends JavaPlugin {
         w.getBlockState(x,y+2,z).getBlock().setType(Material.AIR);
         w.getBlockState(x,y+3,z).getBlock().setType(Material.AIR);
         w.getBlockState(x,y+4,z).getBlock().setType(Material.AIR);
+        w.getBlockState(x,y+5,z).getBlock().setType(Material.AIR);
 
     }
 
