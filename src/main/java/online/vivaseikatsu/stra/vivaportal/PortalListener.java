@@ -117,7 +117,7 @@ public class PortalListener implements Listener {
         Vehicle v = e.getVehicle();
 
         // 乗り物に何も乗っていない場合は終了
-        if(v.getPassenger() == null) return;
+        if(v.getPassengers() == null) return;
 
         // 同じブロック内での移動だった場合、終了
         if(e.getFrom().getBlockX() == e.getTo().getBlockX()
@@ -358,18 +358,34 @@ public class PortalListener implements Listener {
             return;
         }
 
+        // ポータルのハリボテを生成
+        plg.CreateGateway(plg.Portal2Location(exitPortal));
+
         // 乗り物に乗っているとき用の処理
         if(player.getVehicle() != null){
             VehiclePortalTP((Vehicle) player.getVehicle(),exitPortal);
-            // ポータルのハリボテを生成
-            plg.CreateGateway(plg.Portal2Location(exitPortal));
             return;
+        }
+
+        // プレイヤー上になにか乗っているとき用の処理
+        if(!(player.getPassengers().isEmpty())){
+
+            // 乗ってるエンティティのリストを生成
+            List<Entity> entityList = new ArrayList<Entity>(player.getPassengers());
+            // エンティティを下ろす
+            player.eject();
+            // プレイヤーをテレポート
+            player.teleport(plg.Portal2Location(exitPortal));
+
+            for(Entity e : entityList){
+                e.teleport(plg.Portal2Location(exitPortal));
+                player.addPassenger(e);
+            }
+
         }
 
         // 通常のテレポート処理
         player.teleport(plg.Portal2Location(exitPortal));
-        // ポータルのハリボテを生成
-        plg.CreateGateway(plg.Portal2Location(exitPortal));
 
     }
 
